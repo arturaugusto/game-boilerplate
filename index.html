@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title></title>
+	<style type="text/css">
+		canvas {
+			height: 97vh;
+			image-rendering: pixelated;
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			/*transform: translate(-50%, -50%) scaleX(-1);*/
+		}
+	</style>
+</head>
+<body>
+
+<canvas width="64" height="64" id="canvas">
+
+</canvas>
+
+<script type="text/javascript">
+let state = {
+	input: {
+		'w': false,
+		'a': false,
+		's': false,
+		'd': false,
+	},
+	colors: {
+		'x': [255,0,0,100],
+		'b': [0,0,0,255],
+	},
+	entities: [
+		{
+			type: 'player',
+			state: 'idle',
+			axs: [
+				{p: 0, s: 5, id: 'x'},
+				{p: 0, s: 4, id: 'y'},
+				{p: 0, s: 1, id: 'z'},
+			],
+			sprt: {
+				idle: [
+					['xxxxx'],
+					['xxxxx'],
+					['xxxxx'],
+					['xxxxx'],
+				]
+			}
+		},
+		{
+			type: 'wall',
+			state: 'idle',
+			axs: [
+				{p: 13, s: 5, id: 'x'},
+				{p: 0, s: 8, id: 'y'},
+				{p: 0, s: 1, id: 'z'},
+			],
+			sprt: {
+				idle: [
+					['bbbbb'],
+					['bbbbb'],
+					['bbbbb'],
+					['bbbbb'],
+					['bbbbb'],
+					['bbbbb'],
+					['bbbbb'],
+					['bbbbb'],
+				]
+			}
+		}
+	]
+}
+
+window.addEventListener("keypress", (e) => {
+	if (state.input.hasOwnProperty(e.key)) state.input[e.key] = true
+})
+window.addEventListener("keyup", (e) => {
+	if (state.input.hasOwnProperty(e.key)) state.input[e.key] = false
+})
+
+
+let setRgba = (imageData, l, c, r, g, b, a) => {
+	// console.log(imageData)
+	let data = imageData.data
+	let w = imageData.width*4
+    c = Math.ceil(c)
+    l = Math.ceil(l)
+    if (a === 0) return
+    data[l * w + c*4 + 0] = r;
+    data[l * w + c*4 + 1] = g;
+    data[l * w + c*4 + 2] = b;
+    data[l * w + c*4 + 3] = a;
+}
+
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d", { willReadFrequently: true });
+
+let axOverlap = (axa, axb) => {
+	return (axa.p+axa.s > axb.p) && (axa.p < axb.p+axb.s)
+}
+
+let tick = () => {
+	let player = state.entities[0]
+
+	// handle input
+	if (state.input['a']) state.entities[0].axs[0].p -= 1
+	if (state.input['d']) state.entities[0].axs[0].p += 1
+
+	// detect collisions
+	let wallsThatCollides = state.entities
+	.filter(entity => entity.type == 'wall' && entity.axs.reduce((a, c, i) => a && axOverlap(player.axs[i], c), true))
+
+	console.log(wallsThatCollides)
+	wallsThatCollides.forEach(entity => {
+
+	})
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+	let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    state.entities.forEach(entity => {
+    	let axs = entity['axs']
+		for (let y = 0; y < axs[1].s; y++) {
+			for (let z = 0; z < axs[2].s; z++) {
+				for (let x = 0; x < axs[0].s; x++) {
+					let colorId = entity.sprt[entity.state][y][z][x]
+					setRgba(imageData, axs[1].p+y, axs[0].p+x, ...state.colors[colorId])
+				}
+			}
+		}
+    })
+
+    ctx.putImageData(imageData, 0, 0)
+
+
+}
+
+window.setInterval(tick, 160)
+
+</script>
+</body>
+</html>
